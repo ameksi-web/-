@@ -7,7 +7,10 @@
     <style>
         @font-face {
             font-family: 'Minecraft';
-            src: url('https://github.com/ameksi-web/-/blob/main/minecraft.ttf') format('truetype');
+            src: url('https://raw.githubusercontent.com/ameksi-web/-/main/minecraft.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
         }
 
         * {
@@ -69,10 +72,11 @@
         }
 
         .logo {
-            font-family: 'Minecraft', sans-serif;
+            font-family: 'Minecraft', 'Courier New', monospace;
             font-size: 2.8rem;
             margin-bottom: 10px;
             text-shadow: 3px 3px 0 #000;
+            image-rendering: pixelated;
         }
 
         .logo-gradient {
@@ -85,6 +89,30 @@
         header p {
             color: #666;
             font-size: 1rem;
+        }
+
+        /* Font loading indicator */
+        .font-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin-top: 10px;
+        }
+
+        .font-status.loading {
+            background: rgba(255, 165, 0, 0.2);
+            color: #ffa500;
+        }
+
+        .font-status.loaded {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+        }
+
+        .font-status.error {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff4444;
         }
 
         /* Cards */
@@ -111,13 +139,14 @@
             width: 100%;
             padding: 16px 20px;
             font-size: 1.2rem;
-            font-family: 'Minecraft', 'Consolas', monospace;
+            font-family: 'Minecraft', 'Courier New', monospace;
             background: rgba(0, 0, 0, 0.4);
             border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             color: #fff;
             outline: none;
             transition: all 0.3s ease;
+            image-rendering: pixelated;
         }
 
         .text-input:focus {
@@ -354,17 +383,20 @@
             background: rgba(0, 0, 0, 0.6);
             border-radius: 8px;
             padding: 30px;
-            min-height: 80px;
+            min-height: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Minecraft', monospace;
+            font-family: 'Minecraft', 'Courier New', monospace;
             font-size: 2rem;
             letter-spacing: 2px;
             text-shadow: 2px 2px 0 #000, 3px 3px 0 rgba(0,0,0,0.3);
             word-break: break-word;
             text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.05);
+            image-rendering: pixelated;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: none;
         }
 
         /* Output Format Tabs */
@@ -527,6 +559,14 @@
             animation: obfuscate 0.1s infinite;
             display: inline-block;
         }
+
+        /* Minecraft style pixelated rendering */
+        .minecraft-text {
+            font-family: 'Minecraft', 'Courier New', monospace !important;
+            image-rendering: pixelated;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: none;
+        }
     </style>
 </head>
 <body>
@@ -538,12 +578,13 @@
                 <span class="logo-gradient">RGB Генератор</span>
             </div>
             <p>Создавай красивые градиенты для Minecraft • Безлимитно</p>
+            <div class="font-status loading" id="fontStatus">⏳ Загрузка шрифта...</div>
         </header>
 
         <!-- Input -->
         <div class="card">
             <div class="card-title">✏️ Введите текст</div>
-            <input type="text" class="text-input" id="textInput" placeholder="MineBlaze.net" value="MineBlaze.net" maxlength="500">
+            <input type="text" class="text-input minecraft-text" id="textInput" placeholder="MineBlaze.net" value="MineBlaze.net" maxlength="500">
             <div class="char-counter"><span id="charCount">13</span> / 500</div>
         </div>
 
@@ -601,7 +642,7 @@
         <!-- Preview -->
         <div class="card">
             <div class="card-title">👁️ Предпросмотр</div>
-            <div class="preview-box" id="previewBox"></div>
+            <div class="preview-box minecraft-text" id="previewBox"></div>
         </div>
 
         <!-- Output -->
@@ -625,7 +666,7 @@
             </div>
             
             <div class="sample-display">
-                <strong>Формат:</strong> <code id="formatDescription">&#HEXКод для плагинов (EssentialsX, CMI, TAB и др.)</code>
+                <strong>Формат:</strong> <code id="formatDescription">&#RRGGBB — для плагинов (EssentialsX, CMI, TAB, DeluxeChat и др.)</code>
             </div>
         </div>
 
@@ -638,6 +679,40 @@
     <div class="notification" id="notification">✅ Скопировано!</div>
 
     <script>
+        // Check font loading
+        function checkFontLoaded() {
+            const fontStatus = document.getElementById('fontStatus');
+            
+            if (document.fonts && document.fonts.check) {
+                document.fonts.ready.then(function() {
+                    if (document.fonts.check('1em Minecraft')) {
+                        fontStatus.textContent = '✅ Шрифт Minecraft загружен';
+                        fontStatus.className = 'font-status loaded';
+                    } else {
+                        fontStatus.textContent = '⚠️ Используется запасной шрифт';
+                        fontStatus.className = 'font-status error';
+                    }
+                });
+            } else {
+                // Fallback for older browsers
+                setTimeout(() => {
+                    fontStatus.textContent = '✅ Готово';
+                    fontStatus.className = 'font-status loaded';
+                }, 2000);
+            }
+        }
+        
+        // Load font manually as backup
+        const font = new FontFace('Minecraft', 'url(https://raw.githubusercontent.com/ameksi-web/-/main/minecraft.ttf)');
+        font.load().then(function(loadedFont) {
+            document.fonts.add(loadedFont);
+            checkFontLoaded();
+        }).catch(function(error) {
+            console.log('Font loading error:', error);
+            document.getElementById('fontStatus').textContent = '⚠️ Ошибка загрузки шрифта';
+            document.getElementById('fontStatus').className = 'font-status error';
+        });
+
         // State
         let colors = ['#5a148b', '#ff0000', '#ffffff'];
         let currentFormat = 'ampersandhex';
@@ -903,7 +978,7 @@
             outputBox.value = output;
         }
 
-        // &#RRGGBB format (как в образце)
+        // &#RRGGBB format
         function genAmpersandHex(text, gradientColors) {
             let result = '';
             let colorIndex = 0;
